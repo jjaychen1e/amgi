@@ -95,7 +95,8 @@ private import SwiftProtobuf
         for _ in 0..<10 where !pending.isEmpty {
             let queued: QueuedCardsResult = try backend.invoke(.getQueuedCards(fetchLimit: 1))
             let top = try #require(queued.cards.first, "queue ran dry before every card was answered")
-            let rating = try #require(pending.removeValue(forKey: top.card.id), "unexpected card at the top")
+            let removed = pending.removeValue(forKey: top.card.id)
+            let rating = try #require(removed, "unexpected card at the top")
             try backend.invoke(.answerReviewCard(cardId: top.card.id, rating: rating, timeSpentMs: 1_000, states: top.states))
         }
         #expect(pending.isEmpty)
