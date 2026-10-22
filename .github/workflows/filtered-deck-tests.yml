@@ -208,7 +208,10 @@ jobs:
             > "$RUNNER_TEMP/ui.log" 2>&1
           status=$?
           grep -E "Test Case|error:|XCTAssert|\*\* TEST|Executed" "$RUNNER_TEMP/ui.log" | tail -80
-          ls -la "$RUNNER_TEMP/screenshots" || true
+          mkdir -p "$RUNNER_TEMP/screenshots/xcresult"
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/results/ui.xcresult" \
+            --output-path "$RUNNER_TEMP/screenshots/xcresult" || true
+          ls -la "$RUNNER_TEMP/screenshots" "$RUNNER_TEMP/screenshots/xcresult" || true
           exit $status
 
       - name: Upload UI screenshots
