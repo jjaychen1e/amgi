@@ -58,6 +58,19 @@ extension DeckClient: DependencyKey {
                     logger.info("Emptied filtered deck \(deckId)")
                 }
             },
+            fetchFilteredDeck: { deckId in
+                try await backendOffload { try decks.filteredDeck(deckId) }
+            },
+            filteredDeckOrderLabels: {
+                try await backendOffload { try decks.filteredDeckOrderLabels() }
+            },
+            saveFilteredDeck: { draft in
+                try await backendOffload {
+                    let creation = try decks.saveFilteredDeck(draft)
+                    logger.info("Saved filtered deck \(creation.id)")
+                    return creation
+                }
+            },
             extendLimits: { deckId, newDelta, reviewDelta in
                 try await backendOffload {
                     try decks.extendLimits(deckId, newDelta, reviewDelta)

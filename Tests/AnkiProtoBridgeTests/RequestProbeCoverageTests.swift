@@ -24,9 +24,6 @@ struct RequestProbeCoverageTests {
         "computeFsrsParams",
         "simulateFsrsReview",
         "simulateFsrsWorkload",
-
-        "emptyFilteredDeck",
-        "rebuildFilteredDeck",
     ]
 
     private static let repoRoot = URL(fileURLWithPath: #filePath)

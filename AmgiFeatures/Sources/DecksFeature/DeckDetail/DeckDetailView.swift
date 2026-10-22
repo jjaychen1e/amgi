@@ -144,7 +144,15 @@ struct DeckDetailView: View {
                         }
                     }
                 }
-                if !deck.isFiltered {
+                if deck.isFiltered {
+                    Section {
+                        Button {
+                            destination = .sheet(.editFilteredDeck)
+                        } label: {
+                            Label("Edit Filtered Deck…", systemImage: "line.3.horizontal.decrease.circle")
+                        }
+                    }
+                } else {
                     Section {
                         Button {
                             destination = .sheet(.showDeckOptions)
@@ -231,6 +239,10 @@ private extension DeckDetailView {
                 onConfirm: { name in await model.createSubdeck(rawName: name) },
                 text: $newSubdeckName
             )
+        case .editFilteredDeck:
+            FilteredDeckSheet(deckId: deck.id) { saved in
+                model.showFeedback("Rebuilt \"\(Self.leafName(from: saved.name))\"")
+            }
         case .extendLimit(let kind):
             TextPromptSheet(
                 title: "Increase Today's \(kind.noun) Limit",

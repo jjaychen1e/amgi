@@ -21,6 +21,9 @@ extension DeckClient {
         delete: { _ in CollectionChanges() },
         rebuildFilteredDeck: { _ in 0 },
         emptyFilteredDeck: { _ in },
+        fetchFilteredDeck: { deckId in .preview(id: deckId) },
+        filteredDeckOrderLabels: { FilteredDeckDraft.previewOrderLabels },
+        saveFilteredDeck: { _ in DeckCreation(id: DeckID(998), changes: CollectionChanges()) },
         extendLimits: { _, _, _ in },
         fetchDeckConfigContext: { _ in
             throw PreviewClientError.notImplementedInPreview("fetchDeckConfigContext")

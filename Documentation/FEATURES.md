@@ -16,7 +16,7 @@ What Amgi does today. For how it is put together, see [ARCHITECTURE.md](ARCHITEC
 - **Hierarchical deck tree** — recursive expand/collapse with new/learning/review count badges on every node, as a list or a grid.
 - **Deck detail** — per-deck counts, retention, average cards/day, mature card count, and subdeck breakdown.
 - **Per-deck study options** — FSRS weights editor with optimizer and simulator, preset CRUD, Easy Days, bury rules, review timer, auto-advance.
-- **Custom study and filtered decks** — extend today's new-card and review limits per deck, and rebuild or empty a filtered deck to return its cards to their home decks.
+- **Custom study and filtered decks** — extend today's new-card and review limits per deck; create or edit a filtered deck from any Anki search (name, search, card limit, order, and whether answers reschedule); rebuild it, or empty it to return its cards to their home decks.
 - **Import** — `.apkg` and `.colpkg` import, including from the iOS share sheet, with progress shown while it runs.
 
 ## Notes
