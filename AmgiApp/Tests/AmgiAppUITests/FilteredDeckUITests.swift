@@ -47,6 +47,14 @@ final class FilteredDeckUITests: XCTestCase {
         app.descendants(matching: type).matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
     }
 
+    private func waitUntil(_ element: XCUIElement, isEnabled: Bool, _ message: String) {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isEnabled == %@", NSNumber(value: isEnabled)),
+            object: element
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: timeout), .completed, message)
+    }
+
     private func searchField() -> XCUIElement {
         let field = app.textFields["Search"]
         return field.exists ? field : app.textViews["Search"]
@@ -148,8 +156,7 @@ final class FilteredDeckUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
         snap("10-empty-confirm")
         confirm.buttons["Empty"].tap()
-        sleep(2)
-        XCTAssertFalse(app.buttons["Study now"].isEnabled, "an emptied deck has nothing to study")
+        waitUntil(app.buttons["Study now"], isEnabled: false, "an emptied deck has nothing to study")
         snap("11-after-empty")
 
         let rebuild = app.buttons["Rebuild"]
@@ -157,7 +164,7 @@ final class FilteredDeckUITests: XCTestCase {
         rebuild.tap()
         XCTAssertTrue(element(labelBeginsWith: "Rebuilt", type: .staticText).waitForExistence(timeout: timeout))
         snap("12-after-rebuild")
-        XCTAssertTrue(app.buttons["Study now"].isEnabled)
+        waitUntil(app.buttons["Study now"], isEnabled: true, "a rebuilt deck can be studied again")
     }
 
     func test2_invalidAndEmptySearchesAreReported() {
