@@ -19,6 +19,7 @@ struct FilteredDeckSheet: View {
 
     @State private var model: FilteredDeckFormModel
     @State private var errorMessage: String?
+    @State private var picker: PickerKind?
     @Environment(\.dismiss) private var dismiss
 
     init(deckId: DeckID = DeckID(0), onSaved: @escaping (DeckInfo) -> Void) {
@@ -44,6 +45,19 @@ struct FilteredDeckSheet: View {
         }
         .interactiveDismissDisabled(model.isSaving)
         .task { await model.load() }
+        .task(id: MatchKey(search: model.search, isLoaded: model.isLoaded)) {
+            // Debounce typing; a newer keystroke cancels this task.
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            await model.refreshMatchCount()
+        }
+        .sheet(item: $picker) { kind in
+            FilteredDeckTermPicker(
+                kind: kind.selectionKind,
+                load: { try await model.pickerItems(kind.selectionKind) },
+                onAdd: { await model.addTerms($0) }
+            )
+        }
     }
 
     @ViewBuilder
@@ -77,14 +91,28 @@ struct FilteredDeckSheet: View {
                     .textInputAutocapitalization(.never)
                     .lineLimit(1...4)
                     .accessibilityLabel("Search")
+                HStack {
+                    Button { picker = .tags } label: {
+                        Label("Add Tags", systemImage: "tag")
+                    }
+                    Spacer()
+                    Button { picker = .decks } label: {
+                        Label("Add Decks", systemImage: "folder")
+                    }
+                }
+                .buttonStyle(.borderless)
             } header: {
                 Text("Search")
             } footer: {
-                Text("""
-                Anki search syntax, e.g. tag:travel or deck:"English" tag:shopping. \
-                Cards are picked from any deck, whether due or not — add is:due to limit to due cards. \
-                Suspended and buried cards, and cards in another filtered deck, are skipped.
-                """)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(matchSummary)
+                        .accessibilityIdentifier("filteredDeck.matchSummary")
+                    Text("""
+                    Pick tags or decks, or type Anki search syntax such as deck:"English" tag:shopping. \
+                    Cards are picked whether due or not — add is:due for due cards only. \
+                    Suspended and buried cards, and cards in another filtered deck, are skipped.
+                    """)
+                }
             }
 
             Section("Cards") {
@@ -130,6 +158,21 @@ struct FilteredDeckSheet: View {
         }
     }
 
+    private var matchSummary: String {
+        switch model.match {
+        case .counting:
+            return "Counting matching cards…"
+        case .invalid(let message):
+            return "Search isn't valid yet: \(message)"
+        case .count(0):
+            return "No cards match this search."
+        case .count(let count):
+            let noun = count == 1 ? "1 card matches" : "\(count) cards match"
+            guard let limit = model.limit else { return noun + "." }
+            return count <= limit ? "\(noun) — all will be added." : "\(noun) — the first \(limit) will be added."
+        }
+    }
+
     private func save() async {
         switch await model.save() {
         case .success(let deck):
@@ -154,3 +197,22 @@ struct FilteredDeckSheet: View {
     }
 }
 #endif
+
+private enum PickerKind: Identifiable {
+    case tags
+    case decks
+
+    var id: Self { self }
+
+    var selectionKind: SearchTermSelection.Kind {
+        switch self {
+        case .tags: .tag
+        case .decks: .deck
+        }
+    }
+}
+
+private struct MatchKey: Equatable {
+    let search: String
+    let isLoaded: Bool
+}

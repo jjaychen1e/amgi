@@ -32,6 +32,10 @@ import Testing
 
     private func makeModel(
         deckId: DeckID = DeckID(0),
+        count: @escaping @Sendable (String, DeckID) async throws -> Int = { _, _ in 4 },
+        append: @escaping @Sendable (SearchTermSelection, String) async throws -> String = { selection, search in
+            ([search] + selection.names.map { "tag:\($0)" }).filter { !$0.isEmpty }.joined(separator: " ")
+        },
         save: @escaping @Sendable (FilteredDeckDraft) async throws -> DeckCreation
     ) -> FilteredDeckFormModel {
         var client = DeckClient()
@@ -41,6 +45,8 @@ import Testing
         let labels = Self.labels
         client.filteredDeckOrderLabels = { labels }
         client.saveFilteredDeck = save
+        client.countFilterableCards = count
+        client.appendSearchTerms = append
         return withDependencies {
             $0.deckClient = client
         } operation: {
@@ -139,6 +145,47 @@ import Testing
         #expect(!model.canSave)
         model.limitText = "50"
         #expect(model.canSave)
+    }
+
+    @Test func addTerms_appendsToTheSearch() async {
+        let model = makeModel { _ in DeckCreation(id: DeckID(7), changes: CollectionChanges()) }
+        await model.load()
+        model.search = "deck:English"
+        #expect(await model.addTerms(SearchTermSelection(kind: .tag, names: ["travel"])) == nil)
+        #expect(model.search == "deck:English tag:travel")
+    }
+
+    @Test func addTerms_onAnInvalidSearch_reportsAndKeepsTheText() async {
+        let model = makeModel(append: { _, _ in throw Failure() }) { _ in
+            DeckCreation(id: DeckID(7), changes: CollectionChanges())
+        }
+        await model.load()
+        model.search = "(tag:x"
+        let message = await model.addTerms(SearchTermSelection(kind: .tag, names: ["travel"]))
+        #expect(message?.isEmpty == false)
+        #expect(model.search == "(tag:x")
+    }
+
+    @Test func matchCount_reportsCountsAndInvalidSearches() async {
+        let model = makeModel(deckId: DeckID(42), count: { search, deckId in
+            #expect(deckId == DeckID(42))
+            if search.hasPrefix("(") { throw Failure() }
+            return search.isEmpty ? 0 : 3
+        }) { _ in DeckCreation(id: DeckID(42), changes: CollectionChanges()) }
+        await model.load()   // deck 42's search: "tag:travel"
+        await model.refreshMatchCount()
+        #expect(model.match == .count(3))
+
+        model.search = ""
+        await model.refreshMatchCount()
+        #expect(model.match == .count(0))
+
+        model.search = "(tag:x"
+        await model.refreshMatchCount()
+        guard case .invalid = model.match else {
+            Issue.record("expected .invalid, got \(model.match)")
+            return
+        }
     }
 
     @Test func orderOptions_fallBackWithoutLabels_andKeepTheCurrentOrder() {

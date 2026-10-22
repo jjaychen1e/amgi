@@ -120,8 +120,10 @@ enum NotesMethod {
 }
 
 enum SearchMethod {
+    static let buildSearchString: UInt32 = 0
     static let searchCards: UInt32 = 1
     static let searchNotes: UInt32 = 2
+    static let joinSearchNodes: UInt32 = 3
 }
 
 enum SyncMethod {
