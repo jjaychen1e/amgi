@@ -80,6 +80,14 @@ final class FilteredDeckUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: timeout), .completed, message)
     }
 
+    private func waitUntil(_ message: String, _ condition: @escaping () -> Bool) {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in condition() },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: timeout), .completed, message)
+    }
+
     /// Toolbar buttons sit outside the navigation bar element on some layouts.
     private func barButton(_ label: String) -> XCUIElement {
         let inBar = app.navigationBars.buttons[label]
@@ -133,7 +141,22 @@ final class FilteredDeckUITests: XCTestCase {
 
         openCreateSheet()
         replaceText(in: app.textFields["Deck name"], with: "Travel Study")
-        replaceText(in: searchField(), with: "tag:travel")
+        let emptySummary = app.staticTexts["filteredDeck.matchSummary"]
+        XCTAssertTrue(emptySummary.waitForExistence(timeout: timeout), "the form shows a live match count")
+
+        // Pick the tag rather than typing it.
+        app.buttons["Add Tags"].tap()
+        XCTAssertTrue(app.navigationBars["Add Tags"].waitForExistence(timeout: timeout))
+        let travel = app.buttons["travel"]
+        XCTAssertTrue(travel.waitForExistence(timeout: timeout), "the picker lists the collection's tags")
+        travel.tap()
+        snap("02a-tag-picker")
+        barButton("Add (1)").tap()
+        XCTAssertTrue(app.navigationBars["New Filtered Deck"].waitForExistence(timeout: timeout))
+        waitUntil("the picked tag lands in the search") { (self.searchField().value as? String) == "tag:travel" }
+        waitUntil("the match count reflects the picked tag") {
+            self.app.staticTexts["filteredDeck.matchSummary"].label == "4 cards match — all will be added."
+        }
         let reschedule = app.switches.firstMatch
         XCTAssertEqual(reschedule.value as? String, "1", "Reschedule defaults to on, like Anki")
         snap("02-form")
