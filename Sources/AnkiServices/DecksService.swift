@@ -5,7 +5,7 @@
 //  Created by Vladimir Gusev on 27.03.2026.
 //
 
-import AnkiBackend
+package import AnkiBackend
 import AnkiProtoBridge
 public import AnkiKit
 public import Dependencies
@@ -24,6 +24,16 @@ public struct DecksService: Sendable {
     public var removeDeck: @Sendable (_ deckId: DeckID) throws -> CollectionChanges
     public var rebuildFilteredDeck: @Sendable (_ deckId: DeckID) throws -> Int
     public var emptyFilteredDeck: @Sendable (_ deckId: DeckID) throws -> Void
+    /// Settings of an existing filtered deck, or the backend's defaults for
+    /// a new one when `deckId` is 0.
+    public var filteredDeck: @Sendable (_ deckId: DeckID) throws -> FilteredDeckDraft
+    /// Backend labels for every `FilteredDeckOrder`, indexed by raw value.
+    public var filteredDeckOrderLabels: @Sendable () throws -> [String]
+    /// Adds or updates a filtered deck and rebuilds it in one transaction.
+    /// Rejects a blank name, a name another deck already has, and a
+    /// non-positive limit before reaching the backend; the backend then
+    /// rejects an invalid search or one matching no cards, rolling back.
+    public var saveFilteredDeck: @Sendable (_ draft: FilteredDeckDraft) throws -> DeckCreation
     /// Raises today's new/review limits for a deck by the given deltas —
     /// Anki's "custom study → increase today's limit".
     public var extendLimits: @Sendable (_ deckId: DeckID, _ newDelta: Int32, _ reviewDelta: Int32) throws -> Void
@@ -93,6 +103,15 @@ extension DecksService: DependencyKey {
             },
             emptyFilteredDeck: { deckId in
                 try backend.invoke(.emptyFilteredDeck(deckId: deckId))
+            },
+            filteredDeck: { deckId in
+                try backend.invoke(.getOrCreateFilteredDeck(deckId: deckId))
+            },
+            filteredDeckOrderLabels: {
+                try backend.invoke(.filteredDeckOrderLabels)
+            },
+            saveFilteredDeck: { draft in
+                try persistFilteredDeck(draft, backend: backend)
             },
             extendLimits: { deckId, newDelta, reviewDelta in
                 try backend.invoke(.extendLimits(deckId: deckId, newDelta: newDelta, reviewDelta: reviewDelta))
@@ -202,6 +221,35 @@ extension DecksService: DependencyKey {
             }
         )
     }()
+}
+
+/// `DecksService.saveFilteredDeck`, taking the backend explicitly so tests
+/// can drive it against a scratch collection.
+package func persistFilteredDeck(_ draft: FilteredDeckDraft, backend: AnkiBackend) throws -> DeckCreation {
+    var draft = draft
+    draft.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+    draft.search = draft.search.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !draft.name.isEmpty else {
+        throw BackendError(kind: .invalidInput, message: "Deck name can't be empty.")
+    }
+    guard draft.limit > 0 else {
+        throw BackendError(kind: .invalidInput, message: "Card limit must be at least 1.")
+    }
+    // The backend would silently rename a clash to "Name+"; refuse instead
+    // so the deck gets the name the user typed.
+    if let existing = try existingDeckId(named: draft.name, backend: backend),
+       existing != draft.id {
+        throw BackendError(kind: .exists, message: "A deck named \"\(draft.name)\" already exists.")
+    }
+    return try backend.invoke(.addOrUpdateFilteredDeck(draft))
+}
+
+private func existingDeckId(named name: String, backend: AnkiBackend) throws -> DeckID? {
+    do {
+        return try backend.invoke(.deckIdByName(name))
+    } catch let error as BackendError where error.kind == .notFoundError {
+        return nil
+    }
 }
 
 private func makeUpdateRequest(

@@ -183,7 +183,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AnkiServicesTests",
-            dependencies: ["AnkiServices"],
+            dependencies: ["AnkiServices", "AnkiBackend", "AnkiProtoBridge", "AnkiKit"],
             swiftSettings: sharedSwiftSettings
         ),
         .testTarget(

@@ -17,6 +17,27 @@ extension DeckCounts {
     public static let sampleHeavy = DeckCounts(newCount: 142, learnCount: 17, reviewCount: 304)
 }
 
+extension FilteredDeckDraft {
+    public static func preview(id: DeckID = DeckID(0)) -> FilteredDeckDraft {
+        FilteredDeckDraft(
+            id: id,
+            name: id.rawValue == 0 ? "Filtered Deck 09:41" : "Travel phrases",
+            search: id.rawValue == 0 ? "" : "tag:travel",
+            limit: 100,
+            order: .random,
+            reschedule: true,
+            base: Data()
+        )
+    }
+
+    /// Desktop Anki's English labels, in raw-value order.
+    public static let previewOrderLabels = [
+        "Oldest seen first", "Random", "Increasing intervals", "Decreasing intervals",
+        "Most lapses", "Order added", "Order due", "Latest added first",
+        "Retrievability ascending", "Retrievability descending", "Relative overdueness",
+    ]
+}
+
 extension DeckInfo {
     public static let sample = DeckInfo(
         id: DeckID(1),

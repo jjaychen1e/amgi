@@ -25,6 +25,7 @@ enum DeckDetailSheet: Identifiable {
     case exportFile(URL)
     case createSubdeck
     case extendLimit(DeckLimitKind)
+    case editFilteredDeck
 
     var id: String {
         switch self {
@@ -33,6 +34,7 @@ enum DeckDetailSheet: Identifiable {
         case .exportFile(let url): "exportFile-\(url.absoluteString)"
         case .createSubdeck: "createSubdeck"
         case .extendLimit(let kind): "extendLimit-\(kind.noun)"
+        case .editFilteredDeck: "editFilteredDeck"
         }
     }
 }

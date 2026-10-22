@@ -23,6 +23,10 @@ package struct DeckListView: View {
     @Dependency(\.collectionStore) private var store
     @State private var model: DeckListModel
     @State private var showCreateSheet = false
+    @State private var showFilteredDeckSheet = false
+    /// Set by the filtered-deck sheet on save; opened once the sheet is gone
+    /// so the push doesn't race the dismissal.
+    @State private var createdFilteredDeck: DeckInfo?
     @State private var showBrowse = false
     @State private var renameTarget: DeckRowViewData?
     @State private var pendingDeck: DeckInfo?
@@ -81,6 +85,11 @@ package struct DeckListView: View {
                 showCreateSheet = false
             }
         }
+        .sheet(isPresented: $showFilteredDeckSheet, onDismiss: openCreatedFilteredDeck) {
+            FilteredDeckSheet { deck in
+                createdFilteredDeck = deck
+            }
+        }
         .sheet(item: $renameTarget) { row in
             RenameDeckSheet(deckId: DeckID(row.id), currentName: row.fullName) {
                 renameTarget = nil
@@ -101,10 +110,22 @@ package struct DeckListView: View {
                 .keyboardShortcut("r", modifiers: .command)
         }
         ToolbarItem(placement: .primaryAction) {
-            Button("New Deck", systemImage: "plus") {
-                showCreateSheet = true
+            Menu {
+                Button {
+                    showCreateSheet = true
+                } label: {
+                    Label("New Deck", systemImage: "folder.badge.plus")
+                }
+                .keyboardShortcut("n", modifiers: .command)
+                Button {
+                    showFilteredDeckSheet = true
+                } label: {
+                    Label("Create Filtered Deck…", systemImage: "line.3.horizontal.decrease.circle")
+                }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+            } label: {
+                Label("Add", systemImage: "plus")
             }
-            .keyboardShortcut("n", modifiers: .command)
         }
         ToolbarItem(placement: .primaryAction) {
             Menu {
@@ -122,6 +143,12 @@ package struct DeckListView: View {
                 Label("More", systemImage: "ellipsis")
             }
         }
+    }
+
+    private func openCreatedFilteredDeck() {
+        guard let deck = createdFilteredDeck else { return }
+        createdFilteredDeck = nil
+        pendingDeck = deck
     }
 
     private var showsProfilePicker: Bool {
