@@ -38,7 +38,8 @@ import Testing
         client.fetchFilteredDeck = { id in
             .preview(id: id)
         }
-        client.filteredDeckOrderLabels = { Self.labels }
+        let labels = Self.labels
+        client.filteredDeckOrderLabels = { labels }
         client.saveFilteredDeck = save
         return withDependencies {
             $0.deckClient = client
