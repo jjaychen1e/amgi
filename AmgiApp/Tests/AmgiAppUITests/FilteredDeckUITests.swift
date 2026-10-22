@@ -203,14 +203,14 @@ final class FilteredDeckUITests: XCTestCase {
         snap("10-empty-confirm")
         confirm.buttons["Empty"].tap()
         waitUntil(app.buttons["Study now"], isEnabled: false, "an emptied deck has nothing to study")
+        XCTAssertTrue(element(labelBeginsWith: "Empty · Rebuild", type: .staticText).waitForExistence(timeout: timeout))
         snap("11-after-empty")
 
         let rebuild = app.buttons["Rebuild"]
         XCTAssertTrue(rebuild.waitForExistence(timeout: timeout))
         rebuild.tap()
-        XCTAssertTrue(element(labelBeginsWith: "Rebuilt", type: .staticText).waitForExistence(timeout: timeout))
-        snap("12-after-rebuild")
         waitUntil(app.buttons["Study now"], isEnabled: true, "a rebuilt deck can be studied again")
+        snap("12-after-rebuild")
     }
 
     func test2_invalidAndEmptySearchesAreReported() {
