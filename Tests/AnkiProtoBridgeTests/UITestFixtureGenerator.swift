@@ -53,7 +53,7 @@ import AnkiKit
             note.fields[1] = back
             note.tags = tags
             try backend.invoke(.addNote(template: note, deckId: deck))
-            let nid = try #require(try backend.invoke(.searchNoteIds(query: "front:\(front)")).first)
+            let nid = try #require(try backend.invoke(.searchNoteIds(query: "\"front:\(front)\"")).first)
             return try #require(try backend.invoke(.cardIDsOfNote(id: nid)).first)
         }
 
