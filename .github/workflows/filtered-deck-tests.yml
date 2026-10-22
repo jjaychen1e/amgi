@@ -136,6 +136,69 @@ jobs:
           grep -E "✘|error:|passed after|failed after|\*\* TEST|Executed" "$RUNNER_TEMP/full.log" | tail -400
           exit $status
 
+      - name: Generate UI test fixture collection
+        if: always()
+        run: |
+          set +e
+          TEST_RUNNER_AMGI_FIXTURE_OUT="$RUNNER_TEMP/fixture" xcodebuild test \
+            -project AmgiApp/AmgiApp.xcodeproj \
+            -scheme AmgiApp \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/results/fixture.xcresult" \
+            -skipPackagePluginValidation -skipMacroValidation \
+            -only-testing:AnkiProtoBridgeTests/UITestFixtureGenerator \
+            > "$RUNNER_TEMP/fixture.log" 2>&1
+          status=$?
+          grep -E "✔|✘|error:|\*\* TEST" "$RUNNER_TEMP/fixture.log" | tail -50
+          ls -la "$RUNNER_TEMP/fixture"
+          test -f "$RUNNER_TEMP/fixture/collection.anki2" || exit 1
+          exit $status
+
+      - name: Build UI tests
+        if: always()
+        run: |
+          set +e
+          xcodebuild build-for-testing \
+            -project AmgiApp/AmgiApp.xcodeproj \
+            -scheme AmgiAppUITests \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -skipPackagePluginValidation -skipMacroValidation \
+            > "$RUNNER_TEMP/ui-build.log" 2>&1
+          status=$?
+          grep -E "error:|\*\* TEST" "$RUNNER_TEMP/ui-build.log" | tail -50
+          exit $status
+
+      - name: Seed the app with the fixture collection
+        if: always()
+        run: |
+          APP="$RUNNER_TEMP/DerivedData/Build/Products/Debug-iphonesimulator/AmgiApp.app"
+          xcrun simctl uninstall "$SIM_UDID" com.amgiapp.AmgiApp || true
+          xcrun simctl install "$SIM_UDID" "$APP"
+          CONTAINER=$(xcrun simctl get_app_container "$SIM_UDID" com.amgiapp.AmgiApp data)
+          DEST="$CONTAINER/Library/Application Support/AnkiCollection/default"
+          mkdir -p "$DEST"
+          rm -rf "$DEST"/*
+          cp "$RUNNER_TEMP/fixture/collection.anki2" "$DEST/"
+          ls -la "$DEST"
+
+      - name: Filtered deck UI test (create, study, relaunch)
+        if: always()
+        run: |
+          set +e
+          TEST_RUNNER_AMGI_SCREENSHOT_DIR="$RUNNER_TEMP/screenshots" xcodebuild test-without-building \
+            -project AmgiApp/AmgiApp.xcodeproj \
+            -scheme AmgiAppUITests \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/results/ui.xcresult" \
+            > "$RUNNER_TEMP/ui.log" 2>&1
+          status=$?
+          grep -E "Test Case|error:|XCTAssert|\*\* TEST|Executed" "$RUNNER_TEMP/ui.log" | tail -80
+          ls -la "$RUNNER_TEMP/screenshots" || true
+          exit $status
+
       - name: Upload logs and result bundles
         if: always()
         uses: actions/upload-artifact@v4
@@ -144,4 +207,5 @@ jobs:
           path: |
             ${{ runner.temp }}/*.log
             ${{ runner.temp }}/results
+            ${{ runner.temp }}/screenshots
           retention-days: 7
