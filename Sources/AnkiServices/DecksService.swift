@@ -34,6 +34,12 @@ public struct DecksService: Sendable {
     /// non-positive limit before reaching the backend; the backend then
     /// rejects an invalid search or one matching no cards, rolling back.
     public var saveFilteredDeck: @Sendable (_ draft: FilteredDeckDraft) throws -> DeckCreation
+    /// AND's picked tags or decks onto `search`, written by the backend.
+    public var appendSearchTerms: @Sendable (_ selection: SearchTermSelection, _ search: String) throws -> String
+    /// Cards a filtered deck built from `search` would gather, before its
+    /// limit: the backend's own exclusions applied, and — when `deckId` is
+    /// an existing filtered deck — that deck's current cards counted in.
+    public var countFilterableCards: @Sendable (_ search: String, _ deckId: DeckID) throws -> Int
     /// Raises today's new/review limits for a deck by the given deltas —
     /// Anki's "custom study → increase today's limit".
     public var extendLimits: @Sendable (_ deckId: DeckID, _ newDelta: Int32, _ reviewDelta: Int32) throws -> Void
@@ -112,6 +118,12 @@ extension DecksService: DependencyKey {
             },
             saveFilteredDeck: { draft in
                 try persistFilteredDeck(draft, backend: backend)
+            },
+            appendSearchTerms: { selection, search in
+                try backend.invoke(.appendingSearchTerms(selection, to: search))
+            },
+            countFilterableCards: { search, deckId in
+                try backend.invoke(.searchCardIds(query: filterableCardsQuery(search, deckId: deckId))).count
             },
             extendLimits: { deckId, newDelta, reviewDelta in
                 try backend.invoke(.extendLimits(deckId: deckId, newDelta: newDelta, reviewDelta: reviewDelta))
@@ -242,6 +254,16 @@ package func persistFilteredDeck(_ draft: FilteredDeckDraft, backend: AnkiBacken
         throw BackendError(kind: .exists, message: "A deck named \"\(draft.name)\" already exists.")
     }
     return try backend.invoke(.addOrUpdateFilteredDeck(draft))
+}
+
+/// The search a filtered-deck rebuild runs for a term, so a count matches
+/// what building would gather. A deck being edited gets its own cards back
+/// before it rebuilds, so they count too.
+package func filterableCardsQuery(_ search: String, deckId: DeckID) -> String {
+    let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+    let base = trimmed.isEmpty ? "" : "(\(trimmed)) "
+    let scope = deckId.rawValue == 0 ? "-deck:filtered" : "(-deck:filtered or did:\(deckId.rawValue))"
+    return "\(base)-is:suspended -is:buried \(scope)"
 }
 
 private func existingDeckId(named name: String, backend: AnkiBackend) throws -> DeckID? {

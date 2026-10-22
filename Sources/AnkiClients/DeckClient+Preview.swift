@@ -24,6 +24,11 @@ extension DeckClient {
         fetchFilteredDeck: { deckId in .preview(id: deckId) },
         filteredDeckOrderLabels: { FilteredDeckDraft.previewOrderLabels },
         saveFilteredDeck: { _ in DeckCreation(id: DeckID(998), changes: CollectionChanges()) },
+        appendSearchTerms: { selection, search in
+            let term = selection.names.map { "tag:\($0)" }.joined(separator: " or ")
+            return search.isEmpty ? term : "\(search) \(term)"
+        },
+        countFilterableCards: { _, _ in 12 },
         extendLimits: { _, _, _ in },
         fetchDeckConfigContext: { _ in
             throw PreviewClientError.notImplementedInPreview("fetchDeckConfigContext")

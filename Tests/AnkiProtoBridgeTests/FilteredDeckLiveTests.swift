@@ -420,6 +420,43 @@ private import SwiftProtobuf
         }
     }
 
+    // MARK: - Search building
+
+    @Test func appendingSearchTerms_writesQuotedTermsTheBackendAccepts() throws {
+        try withScratchCollection("filtered-search-terms") { backend, _ in
+            let fx = try makeFixture(backend)
+
+            let oneTag = try backend.invoke(.appendingSearchTerms(.init(kind: .tag, names: ["travel"]), to: ""))
+            #expect(oneTag == "tag:travel")
+
+            let anyTag = try backend.invoke(.appendingSearchTerms(.init(kind: .tag, names: ["travel", "shopping"]), to: ""))
+            #expect(Set(try backend.invoke(.searchCardIds(query: anyTag))) == Set(fx.allTravel + fx.englishShopping))
+
+            let scoped = try backend.invoke(.appendingSearchTerms(.init(kind: .deck, names: ["English"]), to: oneTag))
+            #expect(Set(try backend.invoke(.searchCardIds(query: scoped))) == Set(fx.englishTravel))
+
+            let withoutSpanish = try backend.invoke(
+                .appendingSearchTerms(.init(kind: .deck, names: ["Spanish"], excluded: true), to: oneTag)
+            )
+            #expect(Set(try backend.invoke(.searchCardIds(query: withoutSpanish))) == Set(fx.englishTravel))
+
+            // A name with a space and a quote must come back quoted, and match.
+            let odd = try backend.invoke(.addDeck(template: try backend.invoke(.newDeck), name: #"My "Odd" Deck"#)).id
+            _ = try addCard(backend, front: "quirk", deck: odd, tags: [])
+            let oddSearch = try backend.invoke(.appendingSearchTerms(.init(kind: .deck, names: [#"My "Odd" Deck"#]), to: ""))
+            #expect(try backend.invoke(.searchCardIds(query: oddSearch)).count == 1)
+        }
+    }
+
+    @Test func appendingSearchTerms_rejectsAnInvalidExistingSearch() throws {
+        try withScratchCollection("filtered-search-invalid") { backend, _ in
+            let error = #expect(throws: BackendError.self) {
+                try backend.invoke(.appendingSearchTerms(.init(kind: .tag, names: ["travel"]), to: "(tag:x"))
+            }
+            #expect(error?.kind == .searchError)
+        }
+    }
+
     @Test func deckIdByName_matchesCaseInsensitively_andThrowsNotFound() throws {
         try withScratchCollection("filtered-name-lookup") { backend, _ in
             let fx = try makeFixture(backend)

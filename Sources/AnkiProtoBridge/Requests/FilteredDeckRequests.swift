@@ -126,3 +126,82 @@ extension Anki_Decks_FilteredDeckForUpdate {
         config.reschedule = draft.reschedule
     }
 }
+
+// MARK: - Search building
+
+extension Request where Response == String {
+    /// Folds picked tags or decks into `existing` with the backend's own
+    /// search writer, so names are quoted exactly as desktop Anki writes
+    /// them. The selection is AND'ed onto `existing`, which must itself be a
+    /// valid search.
+    public static func appendingSearchTerms(_ selection: SearchTermSelection, to existing: String) -> Self {
+        let node = Anki_Search_SearchNode(selection)
+        let trimmed = existing.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return Self(
+                serviceId: ServiceID.search,
+                methodId: SearchMethod.buildSearchString,
+                encode: { try node.serializedData() },
+                decode: { bytes in try Anki_Generic_String(serializedBytes: bytes).val }
+            )
+        }
+        return Self(
+            serviceId: ServiceID.search,
+            methodId: SearchMethod.joinSearchNodes,
+            encode: {
+                var proto = Anki_Search_JoinSearchNodesRequest()
+                proto.joiner = .and
+                proto.existingNode = Anki_Search_SearchNode.with { $0.parsableText = trimmed }
+                proto.additionalNode = node
+                return try proto.serializedData()
+            },
+            decode: { bytes in try Anki_Generic_String(serializedBytes: bytes).val }
+        )
+    }
+}
+
+extension Request where Response == [CardID] {
+    /// Runs a card search and returns the matching card ids.
+    public static func searchCardIds(query: String) -> Self {
+        Self(
+            serviceId: ServiceID.search,
+            methodId: SearchMethod.searchCards,
+            encode: {
+                var proto = Anki_Search_SearchRequest()
+                proto.search = query
+                return try proto.serializedData()
+            },
+            decode: { bytes in
+                try Anki_Search_SearchResponse(serializedBytes: bytes).ids.map { CardID($0) }
+            }
+        )
+    }
+}
+
+extension Anki_Search_SearchNode {
+    package init(_ selection: SearchTermSelection) {
+        let leaves = selection.names.map { name in
+            Anki_Search_SearchNode.with {
+                switch selection.kind {
+                case .tag: $0.tag = name
+                case .deck: $0.deck = name
+                }
+            }
+        }
+        if selection.excluded {
+            self = Self.group(leaves.map { leaf in .with { $0.negated = leaf } }, joiner: .and)
+        } else {
+            self = Self.group(leaves, joiner: .or)
+        }
+    }
+
+    private static func group(_ nodes: [Anki_Search_SearchNode], joiner: Anki_Search_SearchNode.Group.Joiner) -> Self {
+        if nodes.count == 1 { return nodes[0] }
+        return .with {
+            $0.group = .with {
+                $0.nodes = nodes
+                $0.joiner = joiner
+            }
+        }
+    }
+}

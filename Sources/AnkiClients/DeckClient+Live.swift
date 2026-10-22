@@ -71,6 +71,12 @@ extension DeckClient: DependencyKey {
                     return creation
                 }
             },
+            appendSearchTerms: { selection, search in
+                try await backendOffload { try decks.appendSearchTerms(selection, search) }
+            },
+            countFilterableCards: { search, deckId in
+                try await backendOffload { try decks.countFilterableCards(search, deckId) }
+            },
             extendLimits: { deckId, newDelta, reviewDelta in
                 try await backendOffload {
                     try decks.extendLimits(deckId, newDelta, reviewDelta)

@@ -60,3 +60,25 @@ public struct FilteredDeckDraft: Sendable, Equatable {
         self.base = base
     }
 }
+
+/// Tags or decks picked in the filtered-deck form, turned into search terms
+/// by the backend, which knows Anki's quoting and escaping rules.
+public struct SearchTermSelection: Sendable, Equatable {
+    public enum Kind: Sendable, Equatable {
+        case tag
+        case deck
+    }
+
+    public var kind: Kind
+    /// Full names: `travel::airport`, `English::Verbs`.
+    public var names: [String]
+    /// Included names match any of them (`tag:a OR tag:b`); excluded names
+    /// must all be absent (`-tag:a -tag:b`).
+    public var excluded: Bool
+
+    public init(kind: Kind, names: [String], excluded: Bool = false) {
+        self.kind = kind
+        self.names = names
+        self.excluded = excluded
+    }
+}

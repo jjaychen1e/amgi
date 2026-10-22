@@ -52,6 +52,26 @@ import AnkiProtoBridge
         try backend.invoke(.deckTree(at: Date(timeIntervalSince1970: 0))).flattened().map(\.name)
     }
 
+    private func count(_ backend: AnkiBackend, _ search: String, deckId: DeckID = DeckID(0)) throws -> Int {
+        try backend.invoke(.searchCardIds(query: filterableCardsQuery(search, deckId: deckId))).count
+    }
+
+    @Test func matchCount_appliesTheBackendsExclusions_andCountsTheEditedDecksOwnCards() throws {
+        try withCollection { backend in
+            #expect(try count(backend, "tag:travel") == 1)
+            #expect(try count(backend, "") >= 1, "an empty search counts the whole collection")
+
+            let created = try persistFilteredDeck(try draft(backend, name: "Travel"), backend: backend)
+            #expect(try count(backend, "tag:travel") == 0, "the card is now in a filtered deck")
+            #expect(try count(backend, "tag:travel", deckId: created.id) == 1, "editing that deck gets it back")
+
+            try backend.invoke(.emptyFilteredDeck(deckId: created.id))
+            let card = try #require(try backend.invoke(.searchCardIds(query: "tag:travel")).first)
+            try backend.invoke(.suspendCards(cardIds: [card]))
+            #expect(try count(backend, "tag:travel") == 0, "suspended cards are skipped")
+        }
+    }
+
     @Test func blankName_isRejected() throws {
         try withCollection { backend in
             let before = try deckNames(backend)

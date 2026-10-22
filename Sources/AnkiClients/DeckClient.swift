@@ -25,6 +25,10 @@ public struct DeckClient: Sendable {
     public var filteredDeckOrderLabels: @Sendable () async throws -> [String]
     /// Adds or updates a filtered deck and rebuilds it. Returns the deck id.
     public var saveFilteredDeck: @Sendable (_ draft: FilteredDeckDraft) async throws -> DeckCreation
+    /// AND's picked tags or decks onto a search, quoted by the backend.
+    public var appendSearchTerms: @Sendable (_ selection: SearchTermSelection, _ search: String) async throws -> String
+    /// Cards a filtered deck built from the search would gather, before its limit.
+    public var countFilterableCards: @Sendable (_ search: String, _ deckId: DeckID) async throws -> Int
     /// Raises today's new/review limits for a deck by the given deltas —
     /// Anki's "custom study → increase today's limit".
     public var extendLimits: @Sendable (_ deckId: DeckID, _ newDelta: Int32, _ reviewDelta: Int32) async throws -> Void

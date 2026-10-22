@@ -31,6 +31,13 @@ final class FilteredDeckFormModel {
         case failed(String)
     }
 
+    /// How many cards the current search would gather, before the limit.
+    enum MatchState: Equatable {
+        case counting
+        case count(Int)
+        case invalid(String)
+    }
+
     /// 0 when creating.
     let deckId: DeckID
     var isNew: Bool { deckId.rawValue == 0 }
@@ -38,6 +45,12 @@ final class FilteredDeckFormModel {
     private(set) var loadState: LoadState = .loading
     private(set) var orderOptions: [OrderOption] = []
     private(set) var isSaving = false
+    private(set) var match: MatchState = .counting
+
+    var isLoaded: Bool {
+        if case .loaded = loadState { return true }
+        return false
+    }
 
     var name = ""
     var search = ""
@@ -47,6 +60,7 @@ final class FilteredDeckFormModel {
 
     @ObservationIgnored private var draft: FilteredDeckDraft?
     @ObservationIgnored @Dependency(\.deckClient) private var deckClient
+    @ObservationIgnored @Dependency(\.tagClient) private var tagClient
     @ObservationIgnored @Dependency(\.collectionStore) private var store
 
     /// Desktop Anki caps the limit spin box at 99 999.
@@ -112,6 +126,48 @@ final class FilteredDeckFormModel {
         } catch {
             Log.decks.error("Saving filtered deck failed: \(error)")
             return .failure(.message(error.localizedDescription))
+        }
+    }
+
+    /// Re-counts the cards the search matches. The view calls this
+    /// (debounced) whenever the search changes; a stale result is dropped.
+    func refreshMatchCount() async {
+        guard isLoaded else { return }
+        let search = search
+        match = .counting
+        do {
+            let count = try await deckClient.countFilterableCards(search, deckId)
+            guard !Task.isCancelled, search == self.search else { return }
+            match = .count(count)
+        } catch {
+            guard !Task.isCancelled, search == self.search else { return }
+            match = .invalid(error.localizedDescription)
+        }
+    }
+
+    /// Names offered by the tag or deck picker: every tag, or every normal
+    /// deck (a filtered deck's cards can't be gathered again).
+    func pickerItems(_ kind: SearchTermSelection.Kind) async throws -> [String] {
+        let names: [String]
+        switch kind {
+        case .tag:
+            names = try await tagClient.getAllTags()
+        case .deck:
+            names = try await deckClient.fetchAll().filter { !$0.isFiltered }.map(\.name)
+        }
+        return names.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    /// AND's the picked names onto the search. Returns an error message to
+    /// show, or nil once the search has been updated.
+    func addTerms(_ selection: SearchTermSelection) async -> String? {
+        guard !selection.names.isEmpty else { return nil }
+        do {
+            search = try await deckClient.appendSearchTerms(selection, search)
+            return nil
+        } catch {
+            Log.decks.error("Adding search terms failed: \(error)")
+            return "Fix the search before adding to it: \(error.localizedDescription)"
         }
     }
 
