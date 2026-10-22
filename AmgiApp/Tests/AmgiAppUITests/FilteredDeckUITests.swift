@@ -21,6 +21,18 @@ final class FilteredDeckUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments += ["-onboardingCompleted", "YES"]
         app.launch()
+        if !app.navigationBars["Library"].waitForExistence(timeout: 30) {
+            snap("launch-\(name)")
+            dumpTree("launch-\(name)")
+        }
+    }
+
+    override func tearDown() {
+        if let run = testRun, run.failureCount > 0, app != nil {
+            snap("failure-\(name)")
+            dumpTree("failure-\(name)")
+        }
+        super.tearDown()
     }
 
     private func snap(_ name: String) {
@@ -30,7 +42,7 @@ final class FilteredDeckUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
         if let dir = ProcessInfo.processInfo.environment["AMGI_SCREENSHOT_DIR"] {
-            let url = URL(fileURLWithPath: dir).appendingPathComponent("\(name).png")
+            let url = URL(fileURLWithPath: dir).appendingPathComponent("\(Self.safe(name)).png")
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             try? shot.pngRepresentation.write(to: url)
         }
@@ -38,9 +50,14 @@ final class FilteredDeckUITests: XCTestCase {
 
     private func dumpTree(_ name: String) {
         if let dir = ProcessInfo.processInfo.environment["AMGI_SCREENSHOT_DIR"] {
-            let url = URL(fileURLWithPath: dir).appendingPathComponent("\(name).txt")
+            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            let url = URL(fileURLWithPath: dir).appendingPathComponent("\(Self.safe(name)).txt")
             try? app.debugDescription.write(to: url, atomically: true, encoding: .utf8)
         }
+    }
+
+    private static func safe(_ name: String) -> String {
+        name.map { $0.isLetter || $0.isNumber || $0 == "-" ? $0 : "_" }.reduce(into: "") { $0.append($1) }
     }
 
     private func element(labelBeginsWith prefix: String, type: XCUIElement.ElementType = .button) -> XCUIElement {
