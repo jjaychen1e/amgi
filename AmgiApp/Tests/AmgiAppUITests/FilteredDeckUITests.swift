@@ -21,6 +21,14 @@ final class FilteredDeckUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments += ["-onboardingCompleted", "YES"]
         app.launch()
+        // The launch argument doesn't reach the app's onboarding flag; get past
+        // onboarding as a user would.
+        for _ in 0..<6 where !app.navigationBars["Library"].waitForExistence(timeout: 5) {
+            for label in ["Skip", "Get Started", "Start", "Done", "Continue"] where app.buttons[label].exists {
+                app.buttons[label].tap()
+                break
+            }
+        }
         if !app.navigationBars["Library"].waitForExistence(timeout: 30) {
             snap("launch-\(name)")
             dumpTree("launch-\(name)")
