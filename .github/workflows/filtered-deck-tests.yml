@@ -44,8 +44,9 @@ jobs:
       - name: Install Rust nightly with rust-src
         run: rustup toolchain install nightly --profile minimal --component rust-src
 
-      - name: Cache Rust build artifacts
-        uses: actions/cache@v4
+      - name: Restore Rust build artifacts
+        id: rust-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/registry
@@ -62,6 +63,17 @@ jobs:
 
       - name: Build Rust XCFramework
         run: ./scripts/build-xcframework.sh
+
+      - name: Save Rust build artifacts
+        if: steps.rust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            anki-bridge-rs/target
+            anki-upstream/out
+          key: ${{ runner.os }}-rust-1.95-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Generate Swift protobuf types
         run: ./scripts/generate-protos.sh
