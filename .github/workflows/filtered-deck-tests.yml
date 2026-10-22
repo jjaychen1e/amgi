@@ -87,7 +87,7 @@ jobs:
 
       - name: Filtered deck tests (bridge + service)
         run: |
-          set -o pipefail
+          set +e
           xcodebuild test \
             -project AmgiApp/AmgiApp.xcodeproj \
             -scheme AmgiApp \
@@ -98,12 +98,14 @@ jobs:
             -only-testing:AnkiProtoBridgeTests/FilteredDeckLiveTests \
             -only-testing:AnkiProtoBridgeTests/RequestProbeCoverageTests \
             -only-testing:AnkiServicesTests \
-            2>&1 | tee "$RUNNER_TEMP/focused.log" | grep -E "Test |✔|✘|error:|passed|failed|\*\* TEST" || true
-          test "${PIPESTATUS[0]}" -eq 0
+            > "$RUNNER_TEMP/focused.log" 2>&1
+          status=$?
+          grep -E "Test |✔|✘|error:|passed|failed|\*\* TEST" "$RUNNER_TEMP/focused.log" | tail -400
+          exit $status
 
       - name: Form model tests (DecksFeatureTests)
         run: |
-          set -o pipefail
+          set +e
           cd AmgiFeatures
           xcodebuild -list | head -40
           xcodebuild test \
@@ -113,13 +115,15 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/results/features.xcresult" \
             -skipPackagePluginValidation -skipMacroValidation \
             -only-testing:DecksFeatureTests/FilteredDeckFormModelTests \
-            2>&1 | tee "$RUNNER_TEMP/features.log" | grep -E "Test |✔|✘|error:|passed|failed|\*\* TEST" || true
-          test "${PIPESTATUS[0]}" -eq 0
+            > "$RUNNER_TEMP/features.log" 2>&1
+          status=$?
+          grep -E "Test |✔|✘|error:|passed|failed|\*\* TEST" "$RUNNER_TEMP/features.log" | tail -400
+          exit $status
 
       - name: Full iOS test plan
         if: always()
         run: |
-          set -o pipefail
+          set +e
           xcodebuild test \
             -project AmgiApp/AmgiApp.xcodeproj \
             -scheme AmgiApp \
@@ -127,8 +131,10 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/results/full.xcresult" \
             -skipPackagePluginValidation -skipMacroValidation \
-            2>&1 | tee "$RUNNER_TEMP/full.log" | grep -E "✘|error:|passed after|failed after|\*\* TEST|Executed" || true
-          test "${PIPESTATUS[0]}" -eq 0
+            > "$RUNNER_TEMP/full.log" 2>&1
+          status=$?
+          grep -E "✘|error:|passed after|failed after|\*\* TEST|Executed" "$RUNNER_TEMP/full.log" | tail -400
+          exit $status
 
       - name: Upload logs and result bundles
         if: always()
