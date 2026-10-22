@@ -67,7 +67,7 @@ private import SwiftProtobuf
         template.fields[1] = "back of \(front)"
         template.tags = tags
         try backend.invoke(.addNote(template: template, deckId: deck))
-        let noteId = try #require(try backend.invoke(.searchNoteIds(query: "front:\(front)")).first)
+        let noteId = try #require(try backend.invoke(.searchNoteIds(query: "\"front:\(front)\"")).first)
         return try #require(try backend.invoke(.cardIDsOfNote(id: noteId)).first)
     }
 
@@ -86,6 +86,19 @@ private import SwiftProtobuf
         draft.order = order
         draft.reschedule = reschedule
         return try backend.invoke(.addOrUpdateFilteredDeck(draft))
+    }
+
+    /// Answers whatever is at the top of the queue — the backend rejects any
+    /// other card — until each card in `ratings` has been answered once.
+    private func answerInQueueOrder(_ ratings: [CardID: Rating], _ backend: AnkiBackend) throws {
+        var pending = ratings
+        for _ in 0..<10 where !pending.isEmpty {
+            let queued: QueuedCardsResult = try backend.invoke(.getQueuedCards(fetchLimit: 1))
+            let top = try #require(queued.cards.first, "queue ran dry before every card was answered")
+            let rating = try #require(pending.removeValue(forKey: top.card.id), "unexpected card at the top")
+            try backend.invoke(.answerReviewCard(cardId: top.card.id, rating: rating, timeSpentMs: 1_000, states: top.states))
+        }
+        #expect(pending.isEmpty)
     }
 
     private func cardsIn(_ deck: DeckID, of ids: [CardID], _ backend: AnkiBackend) throws -> Set<CardID> {
@@ -203,16 +216,12 @@ private import SwiftProtobuf
     @Test func rescheduleOn_answersUpdateTheRealSchedule() throws {
         try withScratchCollection("filtered-resched-on") { backend, _ in
             let fx = try makeFixture(backend)
-            let created = try createFiltered(backend, name: "Mixed", search: "tag:travel or tag:shopping", reschedule: true)
+            let created = try createFiltered(backend, name: "Mixed", search: "front:aeropuerto or front:receipt", reschedule: true)
 
             let review = try backend.invoke(.getCard(id: fx.spanishTravel))
-            let queued: QueuedCardsResult = try backend.invoke(.getQueuedCards(fetchLimit: 50))
             // Easy on the review: a 30-days-early Good would legitimately
             // keep the 30-day interval, so it couldn't show a change.
-            for (id, rating) in [(fx.spanishTravel, Rating.easy), (fx.englishShopping[0], .good)] {
-                let entry = try #require(queued.cards.first { $0.card.id == id })
-                try backend.invoke(.answerReviewCard(cardId: id, rating: rating, timeSpentMs: 1_000, states: entry.states))
-            }
+            try answerInQueueOrder([fx.spanishTravel: .easy, fx.englishShopping[0]: .good], backend)
 
             let answeredReview = try backend.invoke(.getCard(id: fx.spanishTravel))
             #expect(answeredReview.reps == review.reps + 1)
@@ -239,16 +248,10 @@ private import SwiftProtobuf
             let reviewBefore = try backend.invoke(.getCard(id: fx.spanishTravel))
             let newBefore = try backend.invoke(.getCard(id: fx.englishShopping[0]))
 
-            let created = try createFiltered(backend, name: "Preview", search: "tag:travel or tag:shopping", reschedule: false)
+            let created = try createFiltered(backend, name: "Preview", search: "front:aeropuerto or front:receipt", reschedule: false)
             #expect(try backend.invoke(.getOrCreateFilteredDeck(deckId: created.id)).reschedule == false)
 
-            let queued: QueuedCardsResult = try backend.invoke(.getQueuedCards(fetchLimit: 50))
-            // Easy on the review: a 30-days-early Good would legitimately
-            // keep the 30-day interval, so it couldn't show a change.
-            for (id, rating) in [(fx.spanishTravel, Rating.easy), (fx.englishShopping[0], .good)] {
-                let entry = try #require(queued.cards.first { $0.card.id == id })
-                try backend.invoke(.answerReviewCard(cardId: id, rating: rating, timeSpentMs: 1_000, states: entry.states))
-            }
+            try answerInQueueOrder([fx.spanishTravel: .easy, fx.englishShopping[0]: .good], backend)
 
             let review = try backend.invoke(.getCard(id: fx.spanishTravel))
             #expect(review.did == fx.spanish, "Good finishes the preview and returns the card")
