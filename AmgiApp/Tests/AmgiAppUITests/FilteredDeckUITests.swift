@@ -88,7 +88,6 @@ final class FilteredDeckUITests: XCTestCase {
         let study = app.buttons["Study now"]
         XCTAssertTrue(study.waitForExistence(timeout: timeout), "creating opens the deck")
         XCTAssertTrue(app.navigationBars["Travel Study"].waitForExistence(timeout: timeout))
-        XCTAssertTrue(app.buttons["Rebuild"].exists || element(labelBeginsWith: "Rebuild").exists)
         snap("03-deck-detail")
         dumpTree("03-deck-detail")
 
@@ -139,6 +138,26 @@ final class FilteredDeckUITests: XCTestCase {
         XCTAssertEqual(app.switches.firstMatch.value as? String, "1")
         snap("09-edit-after-relaunch")
         app.navigationBars.buttons["Cancel"].tap()
+
+        // Empty sends the cards home but keeps the deck; Rebuild collects again.
+        let empty = app.buttons["Empty"]
+        if !empty.exists { app.swipeUp() }
+        XCTAssertTrue(empty.waitForExistence(timeout: timeout))
+        empty.tap()
+        let confirm = app.alerts.firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+        snap("10-empty-confirm")
+        confirm.buttons["Empty"].tap()
+        sleep(2)
+        XCTAssertFalse(app.buttons["Study now"].isEnabled, "an emptied deck has nothing to study")
+        snap("11-after-empty")
+
+        let rebuild = app.buttons["Rebuild"]
+        XCTAssertTrue(rebuild.waitForExistence(timeout: timeout))
+        rebuild.tap()
+        XCTAssertTrue(element(labelBeginsWith: "Rebuilt", type: .staticText).waitForExistence(timeout: timeout))
+        snap("12-after-rebuild")
+        XCTAssertTrue(app.buttons["Study now"].isEnabled)
     }
 
     func test2_invalidAndEmptySearchesAreReported() {
@@ -151,13 +170,13 @@ final class FilteredDeckUITests: XCTestCase {
         app.navigationBars.buttons["Create"].tap()
         let alert = app.alerts["Couldn't create filtered deck"]
         XCTAssertTrue(alert.waitForExistence(timeout: timeout), "an invalid search is reported")
-        snap("10-invalid-search")
+        snap("20-invalid-search")
         alert.buttons["OK"].tap()
 
         replaceText(in: searchField(), with: "tag:does-not-exist")
         app.navigationBars.buttons["Create"].tap()
         XCTAssertTrue(alert.waitForExistence(timeout: timeout), "a search matching nothing is reported")
-        snap("11-no-matches")
+        snap("21-no-matches")
         alert.buttons["OK"].tap()
 
         // Same name as an existing deck.
@@ -165,15 +184,15 @@ final class FilteredDeckUITests: XCTestCase {
         replaceText(in: searchField(), with: "tag:shopping")
         app.navigationBars.buttons["Create"].tap()
         XCTAssertTrue(alert.waitForExistence(timeout: timeout), "a duplicate name is reported")
-        snap("12-duplicate-name")
+        snap("22-duplicate-name")
         alert.buttons["OK"].tap()
 
         // Empty name disables Create.
         replaceText(in: app.textFields["Deck name"], with: "")
         XCTAssertFalse(app.navigationBars.buttons["Create"].isEnabled)
-        snap("13-empty-name")
+        snap("23-empty-name")
         app.navigationBars.buttons["Cancel"].tap()
         XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: timeout))
-        snap("14-library-unchanged")
+        snap("24-library-unchanged")
     }
 }
