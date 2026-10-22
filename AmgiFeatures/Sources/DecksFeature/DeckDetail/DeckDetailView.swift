@@ -56,6 +56,8 @@ struct DeckDetailView: View {
         guard model.hasLoaded else { return .loading }
         let isEmpty = model.isEmpty
         let subtitle: String = {
+            // An emptied filtered deck isn't filled by adding notes.
+            if deck.isFiltered && isEmpty { return "Empty · Rebuild to collect matching cards" }
             if let snap = model.statsSnapshot, !snap.subtitle.isEmpty { return snap.subtitle }
             return isEmpty
                 ? "No cards yet · Add some to start studying"
