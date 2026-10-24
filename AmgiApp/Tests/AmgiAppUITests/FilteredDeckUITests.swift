@@ -271,4 +271,39 @@ final class FilteredDeckUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: timeout))
         snap("24-library-unchanged")
     }
+
+    func test3_swipeToDeleteAFilteredDeck() {
+        launch()
+        openCreateSheet()
+        replaceText(in: app.textFields["Deck name"], with: "Swipe Delete")
+        replaceText(in: searchField(), with: "tag:shopping")
+        barButton("Create").tap()
+        XCTAssertTrue(app.buttons["Study now"].waitForExistence(timeout: timeout))
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Library"].waitForExistence(timeout: timeout))
+
+        let row = element(labelBeginsWith: "SD, Swipe Delete")
+        XCTAssertTrue(row.waitForExistence(timeout: timeout))
+        row.swipeLeft()
+        let swipeDelete = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(swipeDelete.waitForExistence(timeout: timeout))
+        snap("30-swipe")
+        swipeDelete.tap()
+        let alert = app.alerts.firstMatch
+        let alertShown = alert.waitForExistence(timeout: timeout)
+        snap("31-after-swipe-delete")
+        dumpTree("31-after-swipe-delete")
+        XCTAssertTrue(alertShown, "deleting asks for confirmation")
+        XCTAssertTrue(alert.staticTexts["Its cards go back to the decks they came from. No cards are deleted."].exists)
+        sleep(2)
+        XCTAssertTrue(alert.exists, "the confirmation stays up until answered")
+        alert.buttons["Delete"].tap()
+        waitUntil("the row goes away once confirmed") { !self.element(labelBeginsWith: "SD, Swipe Delete").exists }
+        snap("32-deleted")
+
+        app.terminate()
+        launch()
+        XCTAssertTrue(element(labelBeginsWith: "E, English").waitForExistence(timeout: timeout))
+        XCTAssertFalse(element(labelBeginsWith: "SD, Swipe Delete").exists, "the deletion is saved")
+    }
 }
