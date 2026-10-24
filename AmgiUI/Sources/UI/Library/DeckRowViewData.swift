@@ -42,3 +42,13 @@ public struct DeckRowViewData: Identifiable, Equatable, Hashable, Sendable {
 
     public var totalCount: Int { newCount + learnCount + reviewCount }
 }
+
+extension DeckRowViewData {
+    /// Deleting a filtered deck only empties it: Anki sends its cards back
+    /// to their home decks.
+    var deleteWarning: String {
+        isFiltered
+            ? "Its cards go back to the decks they came from. No cards are deleted."
+            : "This will permanently delete the deck and all its cards."
+    }
+}

@@ -58,9 +58,13 @@ public struct DeckListRowView: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) { showDeleteAlert = true } label: {
+            // Not `role: .destructive`: that makes the list drop the row at
+            // once, taking this row's confirmation alert with it, so the
+            // deck vanished without being deleted.
+            Button { showDeleteAlert = true } label: {
                 Label("Delete", systemImage: "trash")
             }
+            .tint(.red)
             Button { onRename() } label: {
                 Label("Rename", systemImage: "pencil")
             }
@@ -70,7 +74,7 @@ public struct DeckListRowView: View {
             Button("Delete", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will permanently delete the deck and all its cards.")
+            Text(data.deleteWarning)
         }
     }
 
