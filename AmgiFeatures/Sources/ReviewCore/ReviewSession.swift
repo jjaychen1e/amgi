@@ -182,7 +182,7 @@ public final class ReviewSession {
     /// thread at the exact moment of the tap.
     public func revealAnswer() {
         guard !showAnswer else { return }
-        backHTML = strippingTypedAnswerPlaceholders(from: renderedBackHTML)
+        backHTML = CardText.strippingTypedAnswerPlaceholders(from: renderedBackHTML)
         showAnswer = true
 
         guard let state = typedAnswerState else { return }
@@ -369,7 +369,7 @@ public final class ReviewSession {
         typedAnswerState = prepared.typedAnswerState
         templateName = prepared.templateName
         frontHTML = prepared.frontHTML
-        backHTML = strippingTypedAnswerPlaceholders(from: prepared.renderedBackHTML)
+        backHTML = CardText.strippingTypedAnswerPlaceholders(from: prepared.renderedBackHTML)
         reresolveCurrentCard()
 
         if showAnswer, let state = prepared.typedAnswerState {

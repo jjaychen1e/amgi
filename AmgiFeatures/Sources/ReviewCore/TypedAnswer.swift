@@ -111,11 +111,3 @@ private func firstTypedAnswerPlaceholder(in html: String, cardOrdinal: UInt32) -
         clozeOrdinal: clozeOrdinal
     )
 }
-
-func strippingTypedAnswerPlaceholders(from html: String) -> String {
-    guard let regex = try? NSRegularExpression(pattern: #"\[\[type:.+?\]\]"#) else {
-        return html
-    }
-    let range = NSRange(html.startIndex..., in: html)
-    return regex.stringByReplacingMatches(in: html, range: range, withTemplate: "")
-}

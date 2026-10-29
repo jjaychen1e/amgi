@@ -34,6 +34,7 @@ public enum CardText {
     )
     private static let tagRegex = try? NSRegularExpression(pattern: #"<[^>]+>"#)
     private static let blankLineRegex = try? NSRegularExpression(pattern: #"\n\s*\n"#)
+    private static let typedAnswerRegex = try? NSRegularExpression(pattern: #"\[\[type:.+?\]\]"#)
 
     /// Filenames referenced by `[sound:…]` markers, in order.
     public static func soundFilenames(in html: String) -> [String] {
@@ -157,6 +158,18 @@ public enum CardText {
             last = match.range.location + match.range.length
         }
         return out + ns.substring(from: last)
+    }
+
+    /// Drops the `[[type:…]]` placeholders the engine leaves where a
+    /// `{{type:Field}}` input goes. Only the reviewer fills them in; every
+    /// other surface shows the card without them.
+    public static func strippingTypedAnswerPlaceholders(from html: String) -> String {
+        guard let typedAnswerRegex else { return html }
+        return typedAnswerRegex.stringByReplacingMatches(
+            in: html,
+            range: NSRange(location: 0, length: (html as NSString).length),
+            withTemplate: ""
+        )
     }
 
     private static func decodeEntities(_ text: String) -> String {

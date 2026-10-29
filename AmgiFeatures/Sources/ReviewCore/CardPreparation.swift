@@ -148,7 +148,7 @@ func prepareCard(
             renderedBackHTML: rendered.backHTML,
             cardCSS: rendered.cardCSS,
             typedAnswerState: typedState,
-            frontHTML: strippingTypedAnswerPlaceholders(from: rendered.frontHTML),
+            frontHTML: CardText.strippingTypedAnswerPlaceholders(from: rendered.frontHTML),
             resolvedMode: resolution.mode,
             resolvedByAuto: resolution.byAuto,
             templateName: templateName,

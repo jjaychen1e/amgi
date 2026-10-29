@@ -85,4 +85,10 @@ struct CardTextTests {
     func noMarkers() {
         #expect(CardText.soundFilenames(in: "plain text").isEmpty)
     }
+
+    @Test("strips every typed-answer placeholder and nothing else")
+    func stripsTypedAnswerPlaceholders() {
+        let html = "<div>Q</div>[[type:Back]]<br>[[type:cloze:Text]] [sound:a.mp3]"
+        #expect(CardText.strippingTypedAnswerPlaceholders(from: html) == "<div>Q</div><br> [sound:a.mp3]")
+    }
 }
