@@ -63,10 +63,14 @@ struct DispatchTableTests {
         // Named `deck_tree` upstream; the Swift constant reads `getDeckTree`
         // to match its request factory. Same index — an alias, not drift.
         Method(ServiceID.decks, DecksMethod.getDeckTree, "deck_tree"),
+        Method(ServiceID.decks, DecksMethod.getDeckIdByName, "get_deck_id_by_name"),
         Method(ServiceID.decks, DecksMethod.getDeck, "get_deck"),
         Method(ServiceID.decks, DecksMethod.getDeckNames, "get_deck_names"),
         Method(ServiceID.decks, DecksMethod.removeDecks, "remove_decks"),
         Method(ServiceID.decks, DecksMethod.renameDeck, "rename_deck"),
+        Method(ServiceID.decks, DecksMethod.getOrCreateFilteredDeck, "get_or_create_filtered_deck"),
+        Method(ServiceID.decks, DecksMethod.addOrUpdateFilteredDeck, "add_or_update_filtered_deck"),
+        Method(ServiceID.decks, DecksMethod.filteredDeckOrderLabels, "filtered_deck_order_labels"),
         Method(ServiceID.decks, DecksMethod.setCurrentDeck, "set_current_deck"),
         Method(ServiceID.decks, DecksMethod.getCurrentDeck, "get_current_deck"),
         // backend_scheduler_service (13)
@@ -107,8 +111,10 @@ struct DispatchTableTests {
         Method(ServiceID.notes, NotesMethod.removeNotes, "remove_notes"),
         Method(ServiceID.notes, NotesMethod.cardsOfNote, "cards_of_note"),
         // backend_search_service (29)
+        Method(ServiceID.search, SearchMethod.buildSearchString, "build_search_string"),
         Method(ServiceID.search, SearchMethod.searchCards, "search_cards"),
         Method(ServiceID.search, SearchMethod.searchNotes, "search_notes"),
+        Method(ServiceID.search, SearchMethod.joinSearchNodes, "join_search_nodes"),
         // backend_sync_service (1)
         Method(ServiceID.sync, SyncMethod.syncMedia, "sync_media"),
         Method(ServiceID.sync, SyncMethod.abortMediaSync, "abort_media_sync"),
