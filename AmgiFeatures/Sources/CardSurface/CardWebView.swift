@@ -1,23 +1,27 @@
 //
 //  CardWebView.swift
-//  ReviewFeature
+//  CardSurface
 //
 //  Created by Vladimir Gusev on 27.03.2026.
 //
 
 import AppCore
-import AppShared
+package import AppShared
 import OSLog
 import Reader
-import SwiftUI
-import WebKit
+package import SwiftUI
+package import WebKit
 import UIKit
 import AVFoundation
 import AmgiCardWeb
 
 
+/// Hosts one rendered Anki card in a `WKWebView`: the template's HTML and CSS,
+/// media and MathJax over the `amgi-asset` scheme, audio and TTS, night mode.
+/// The reviewer and the browse previewer both draw cards through this, so a
+/// card looks the same wherever it appears.
 @MainActor
-struct CardWebView {
+package struct CardWebView {
     @Environment(\.colorScheme) private var colorScheme
 
     let html: String
@@ -41,7 +45,7 @@ struct CardWebView {
     let onLookupRequested: ((String?, String?, CGPoint) -> Void)?
     let onShowAnswerRequested: (() -> Void)?
 
-    init(
+    package init(
         html: String,
         cardCSS: String = "",
         autoplayEnabled: Bool = true,
@@ -85,7 +89,7 @@ struct CardWebView {
         self.onShowAnswerRequested = onShowAnswerRequested
     }
 
-    func makeCoordinator() -> CardWebViewCoordinator {
+    package func makeCoordinator() -> CardWebViewCoordinator {
         CardWebViewCoordinator(
             onAudioStateChange: onAudioStateChange,
             onCardBackgroundColorChange: onCardBackgroundColorChange,
@@ -283,15 +287,15 @@ struct CardWebView {
 // MARK: - Representable conformance
 
 extension CardWebView: UIViewRepresentable {
-    func makeUIView(context: Context) -> WKWebView {
+    package func makeUIView(context: Context) -> WKWebView {
         makeWebView(coordinator: context.coordinator)
     }
 
-    func updateUIView(_ webView: WKWebView, context: Context) {
+    package func updateUIView(_ webView: WKWebView, context: Context) {
         updateWebView(webView, coordinator: context.coordinator)
     }
 
-    static func dismantleUIView(_ webView: WKWebView, coordinator: CardWebViewCoordinator) {
+    package static func dismantleUIView(_ webView: WKWebView, coordinator: CardWebViewCoordinator) {
         dismantleWebView(webView, coordinator: coordinator)
     }
 }

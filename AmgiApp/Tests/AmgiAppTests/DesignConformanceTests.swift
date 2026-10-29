@@ -28,11 +28,11 @@ struct DesignConformanceTests {
 
     /// Deliberately off-system, with the reason. These never drain.
     private static let permanentlyExempt: [String: String] = [
-        "ReviewFeature/CardWebViewCoordinator.swift":
+        "CardSurface/CardWebViewCoordinator.swift":
             "Parses Anki template CSS into UIColor. Card content, not app chrome.",
-        "ReviewFeature/CardWebView.swift":
+        "CardSurface/CardWebView.swift":
             "Same — template CSS parsing.",
-        "ReviewFeature/CardHTMLBuilder.swift":
+        "CardSurface/CardHTMLBuilder.swift":
             "Same — template CSS parsing. Split out of CardWebView.swift.",
         "AppShared/ReaderThemeColor.swift":
             "Reader's own sepia/dark/light reading themes, deliberately independent of the app palette.",

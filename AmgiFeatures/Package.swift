@@ -45,6 +45,7 @@ let package = Package(
         .library(name: "SyncFeature", targets: ["SyncFeature"]),
         .library(name: "ReaderFeature", targets: ["ReaderFeature"]),
         .library(name: "ReviewCore", targets: ["ReviewCore"]),
+        .library(name: "CardSurface", targets: ["CardSurface"]),
         .library(name: "ReviewFeature", targets: ["ReviewFeature"]),
         .library(name: "DecksFeature", targets: ["DecksFeature"]),
         .library(name: "WidgetFeature", targets: ["WidgetFeature"]),
@@ -200,6 +201,28 @@ let package = Package(
             ],
             swiftSettings: sharedSwiftSettings
         ),
+        // The WebKit card host: CardWebView, its coordinator and HTML
+        // builder, and the amgi-asset scheme handler. Shared by the review
+        // screen and Browse's card previewer. It is a sink rather than part
+        // of ReviewFeature because ReviewFeature depends on BrowseFeature, so
+        // Browse could not reach it there.
+        //
+        // iOS-only, like AppShared (WebKit and UIKit unguarded).
+        .target(
+            name: "CardSurface",
+            dependencies: [
+                "AppCore",
+                "AppShared",
+                // Reader (not ReaderDictionary) is pure Swift — no Cxx mode —
+                // and carries LookupExtraction.js, the tap-to-lookup extractor
+                // the card web view injects.
+                .product(name: "Reader", package: "AmgiReader"),
+                .product(name: "AnkiClients", package: "amgi"),
+                .product(name: "AmgiCardWeb", package: "amgi"),
+                .product(name: "Dependencies", package: "swift-dependencies"),
+            ],
+            swiftSettings: sharedSwiftSettings
+        ),
         // Deck list, deck detail, deck config + the FSRS simulator, and the
         // profile picker. Depends on ReviewFeature only to present ReviewView
         // off a deck row.
@@ -229,8 +252,8 @@ let package = Package(
             ],
             swiftSettings: sharedSwiftSettings
         ),
-        // The review screen: WebKit card host, flip chrome, rating bar,
-        // native renderer, render-mode UI. The session state machine itself is
+        // The review screen: flip chrome, rating bar, native renderer,
+        // render-mode UI. The WebKit card host is CardSurface. The session state machine itself is
         // ReviewCore, which the watch also links — keep engine logic there
         // and presentation here.
         //
@@ -254,12 +277,9 @@ let package = Package(
                 "AppCore",
                 "AppShared",
                 "ReviewCore",
+                "CardSurface",
                 "BrowseFeature",
                 "TemplatesFeature",
-                // Reader (not ReaderDictionary) is pure Swift — no Cxx mode —
-                // and carries LookupExtraction.js, the tap-to-lookup extractor
-                // the card web view injects.
-                .product(name: "Reader", package: "AmgiReader"),
                 .product(name: "AnkiKit", package: "amgi"),
                 .product(name: "AnkiClients", package: "amgi"),
                 .product(name: "AmgiCardWeb", package: "amgi"),
@@ -383,6 +403,7 @@ let package = Package(
                 "AppCore",
                 "AppShared",
                 "ReviewCore",
+                "CardSurface",
                 "BrowseFeature",
                 "ReviewFeature",
                 "SyncFeature",

@@ -7,7 +7,8 @@ the app target; the sinks never depend on a `*Feature`.
 
 - `Anki*` — derived from the upstream engine.
 - Bare noun — app-owned and reusable, so another module may depend on it
-  (`UI`, `Theme`, `Reader`, `StatsCharts`, `AppCore`, `AppShared`, `ReviewCore`).
+  (`UI`, `Theme`, `Reader`, `StatsCharts`, `AppCore`, `AppShared`, `ReviewCore`,
+  `CardSurface`).
 - `*Feature` — screen-level, suffix not prefix (`SyncFeature` reads "the Sync
   feature"). App extensions and the watch app count as screen-level.
 
@@ -22,6 +23,7 @@ screen layer visually distinct from the sinks.
 | `AppCore` | Preferences, `AccountStore`, app-group keys, `WidgetSnapshot`, `StreakCalculator`, `CardFlag` | Engine-free. An `AnkiClients` edge here drags Rust into the widget and the watch. |
 | `AppShared` | `CollectionStore`, `ImportHelper`, `ShareSheet`, `CardContextMenu`, widget-snapshot writing, the `deckImport` modifier | iOS-only: imports UIKit and WidgetKit unguarded, so it cannot build for watchOS. |
 | `ReviewCore` | `ReviewSession`, `TemplateRenderOverrides` | watchOS-clean. No `AppShared`, no UI, UIKit behind `#if canImport(UIKit)`. |
+| `CardSurface` | `CardWebView`, its coordinator and HTML builder, `CardAssetScheme` | iOS-only. Holds the card host so Browse can draw cards without reaching into `ReviewFeature`, which depends on Browse. |
 | `StatsCharts` | Chart and heatmap views over `GraphsSnapshot` | Compiled for watchOS in its entirety — every file, not only the ones the watch renders. |
 
 Route shared code down into a sink rather than adding a feature→feature edge.

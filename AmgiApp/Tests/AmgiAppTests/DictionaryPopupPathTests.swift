@@ -7,9 +7,9 @@ import SwiftUI
 import Testing
 import UIKit
 import WebKit
+@testable import CardSurface
 @testable import ReaderDictionary
 @testable import ReaderFeature
-@testable import ReviewFeature
 
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(1)))

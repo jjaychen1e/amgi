@@ -10,7 +10,7 @@ import AppCore
 import Theme
 import Sharing
 import ReviewCore
-import ReviewFeature
+import CardSurface
 
 struct ReviewSettingsView: View {
     @Shared(.appStorage(ReviewPreferences.Keys.openLinksExternally))

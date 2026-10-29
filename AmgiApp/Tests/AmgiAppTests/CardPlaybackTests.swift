@@ -16,6 +16,7 @@ import Foundation
 import Testing
 import UIKit
 import WebKit
+@testable import CardSurface
 @testable import ReviewFeature
 
 @MainActor

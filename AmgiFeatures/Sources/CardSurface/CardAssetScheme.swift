@@ -1,6 +1,6 @@
 //
 //  CardAssetScheme.swift
-//  ReviewFeature
+//  CardSurface
 //
 //  Created by Vladimir Gusev on 16.04.2026.
 //

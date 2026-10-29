@@ -1,13 +1,13 @@
 //
 //  CardWebViewConfig.swift
-//  ReviewFeature
+//  CardSurface
 //
 //  Created by Vladimir Gusev on 01.05.2026.
 //
 
 import Foundation
 
-enum CardWebViewReplayMode: String, Sendable {
+package enum CardWebViewReplayMode: String, Sendable {
     case question
     case answerOnly
     case answerWithQuestion

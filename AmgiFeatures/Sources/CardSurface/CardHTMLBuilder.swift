@@ -1,6 +1,6 @@
 //
 //  CardHTMLBuilder.swift
-//  ReviewFeature
+//  CardSurface
 //
 //  Created by Vladimir Gusev on 27.03.2026.
 //

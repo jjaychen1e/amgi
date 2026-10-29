@@ -1,6 +1,6 @@
 //
 //  CardWebViewCoordinator.swift
-//  ReviewFeature
+//  CardSurface
 //
 //  Created by Vladimir Gusev on 01.05.2026.
 //
@@ -8,9 +8,9 @@
 import OSLog
 import AppCore
 import Foundation
-import WebKit
+package import WebKit
 import SwiftUI
-import AVFoundation
+package import AVFoundation
 import UIKit
 import SafariServices
 import AmgiCardWeb
@@ -31,7 +31,7 @@ private final class TTSUtterance: AVSpeechUtterance {
 ///  - AVSpeechSynthesizer integration for TTS
 ///  - Frame-load lifecycle so per-card evaluateJavaScript runs at the right moment
 @MainActor
-final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
+package final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, AVSpeechSynthesizerDelegate {
 
     // MARK: State tracked across updates
 
@@ -78,7 +78,7 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
 
     // MARK: - WKScriptMessageHandler
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    package func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "amgiShowAnswer" {
             onShowAnswerRequested?()
             return
@@ -141,7 +141,7 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
 
     // MARK: - AVSpeechSynthesizerDelegate
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+    package nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         guard let token = (utterance as? TTSUtterance)?.token else { return }
         Task { @MainActor [weak self] in
             guard let self, self.activeUtterance?.token == token else { return }
@@ -149,14 +149,14 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
         }
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    package nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         guard let token = (utterance as? TTSUtterance)?.token else { return }
         Task { @MainActor [weak self] in
             self?.finishTTS(token)
         }
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    package nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         guard let token = (utterance as? TTSUtterance)?.token else { return }
         Task { @MainActor [weak self] in
             self?.finishTTS(token)
@@ -202,7 +202,7 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
 
     // MARK: - WKNavigationDelegate
 
-    func webView(
+    package func webView(
         _ webView: WKWebView,
         decidePolicyFor navigationAction: WKNavigationAction,
         decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void
@@ -239,7 +239,7 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
         }
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    package func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isPageLoaded = true
 
         guard let pendingUpdateScript else { return }
@@ -251,11 +251,11 @@ final class CardWebViewCoordinator: NSObject, WKNavigationDelegate, WKScriptMess
         }
     }
 
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+    package func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
         Log.review.error("Navigation failed: \(error)")
     }
 
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
+    package func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) {
         Log.review.error("Provisional navigation failed: \(error)")
     }
 

@@ -72,9 +72,10 @@ with no prefix (`AppCore`, `AppShared`, `ReviewCore`, `StatsCharts`).
 | **AppShared** | The engine-touching, iOS-only half of the sink: `CollectionStore`, `ImportHelper`, share sheet, card context menu, widget snapshot writing. |
 | **StatsCharts** | Pure chart and heatmap views over `GraphsSnapshot`. Compiled for watchOS in its entirety. |
 | **ReviewCore** | The review state machine (`ReviewSession`) and template render overrides. Shared with the watch, so it stays watchOS-clean. |
+| **CardSurface** | The WebKit card host (`CardWebView`) and its `amgi-asset` scheme handler. Shared by the review screen and Browse's card previewer. iOS-only. |
 | **BrowseFeature** | Note browsing, search, authoring, batch tagging, tag management, and the image-occlusion editor. |
 | **TemplatesFeature** | Card-template editor, template source editing, preview, and notetype field management. |
-| **ReviewFeature** | The review screen: WebKit card host, native renderer, flip chrome, rating bar, render-mode UI. |
+| **ReviewFeature** | The review screen: native renderer, flip chrome, rating bar, render-mode UI. |
 | **DecksFeature** | Deck list, deck detail, deck config with the FSRS simulator, profile picker. |
 | **ReaderFeature** | The EPUB and Anki-note readers, the offline dictionary lookup UI, and the Study landing screen. The only module that touches `ReaderDictionary`. |
 | **StatsFeature** | The statistics dashboard. |

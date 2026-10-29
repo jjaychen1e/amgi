@@ -18,6 +18,7 @@ import BrowseFeature
 import TemplatesFeature
 import Sharing
 import ReviewCore
+import CardSurface
 import SwiftUINavigation
 
 // MARK: - Card Area
