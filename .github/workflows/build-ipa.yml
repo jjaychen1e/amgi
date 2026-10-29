@@ -25,7 +25,9 @@ defaults:
 
 jobs:
   build:
-    runs-on: macos-26
+    # The Xcode 27 image (macOS 27) is still a preview label on GitHub, so it
+    # can queue longer than macos-26. It matches the Xcode used locally.
+    runs-on: xcode-27
     timeout-minutes: 60
 
     # GITHUB_TOKEN scopes — minimal set required for tag-triggered release publish.
@@ -33,11 +35,11 @@ jobs:
       contents: write
 
     steps:
-      # ── 1. Select Xcode 26.3 (release build, not RC) ─────────────
-      - name: Select Xcode 26.3
+      # ── 1. Select Xcode 27.1 (release build, not RC) ─────────────
+      - name: Select Xcode 27.1
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.3'
+          xcode-version: '27.1'
 
       # ── 2. Confirm toolchain versions ────────────────────────────
       - name: Show versions
@@ -116,7 +118,7 @@ jobs:
               -project AmgiApp/AmgiApp.xcodeproj \
               -scheme AmgiApp \
               -configuration Debug \
-              -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+              -destination 'platform=iOS Simulator,name=iPhone 18 Pro Max' \
               -derivedDataPath "$DERIVED_DATA_PATH" \
               -skipPackagePluginValidation \
               -skipMacroValidation \
@@ -126,7 +128,7 @@ jobs:
               -project AmgiApp/AmgiApp.xcodeproj \
               -scheme AmgiApp \
               -configuration Debug \
-              -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+              -destination 'platform=iOS Simulator,name=iPhone 18 Pro Max' \
               -derivedDataPath "$DERIVED_DATA_PATH" \
               -skipPackagePluginValidation \
               -skipMacroValidation \
