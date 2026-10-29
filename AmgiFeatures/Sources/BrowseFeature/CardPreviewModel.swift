@@ -19,9 +19,9 @@ import Foundation
 /// screen, which of its cards, which side, and the engine's render of each
 /// card.
 ///
-/// The pager keeps its neighbouring pages alive, so state is keyed by note
-/// and card rather than held for "the current" one, and a page that scrolls
-/// back into view finds its render already there.
+/// The notes either side of the current one load ahead of it, so state is
+/// keyed by note and card rather than held for "the current" one, and a
+/// step to the next note finds its render already there.
 @Observable
 @MainActor
 final class CardPreviewModel {
@@ -130,10 +130,24 @@ final class CardPreviewModel {
 
     // MARK: - Loading
 
+    /// Loads the note on screen, then the ones either side of it, so the
+    /// next step in either direction lands on a card that's already drawn
+    /// instead of a spinner.
+    func loadCurrentAndNeighbours() async {
+        let center = index
+        for offset in [0, 1, -1] where noteIDs.indices.contains(center + offset) {
+            await load(noteIDs[center + offset])
+        }
+    }
+
     /// Loads a note's cards and renders the selected one. A no-op once the
-    /// note has loaded, so a page can call it every time it reappears.
+    /// note has loaded or while it is loading, so a prefetch and the note
+    /// coming on screen don't fetch it twice.
     func load(_ noteID: NoteID) async {
-        if case .loaded? = pages[noteID] { return }
+        switch pages[noteID] {
+        case .loaded?, .loading?: return
+        case .failed?, nil: break
+        }
         pages[noteID] = .loading
         do {
             guard let note = try await noteClient.fetch(noteID) else {
@@ -167,7 +181,10 @@ final class CardPreviewModel {
     }
 
     private func render(_ cardID: CardID) async {
-        if case .rendered? = renders[cardID] { return }
+        switch renders[cardID] {
+        case .rendered?, .loading?: return
+        case .failed?, nil: break
+        }
         renders[cardID] = .loading
         let cardRendering = cardRendering
         do {

@@ -48,7 +48,8 @@ struct CardPreviewModelTests {
         }
     }
 
-    /// Two notes: note 1 has two cards, served out of ord order; note 2 has one.
+    /// Note 1 has two cards, served out of ord order; every other note has
+    /// one, numbered ten times the note (note 2's is card 20).
     private func withCollection(
         notes: [Int64] = [1, 2],
         notetype: Notetype = basicAndReversed,
@@ -63,7 +64,7 @@ struct CardPreviewModelTests {
             $0.cardClient.fetchByNote = { id in
                 id.rawValue == 1
                     ? [Self.card(11, note: 1, ord: 1), Self.card(10, note: 1, ord: 0)]
-                    : [Self.card(20, note: id.rawValue, ord: 0)]
+                    : [Self.card(id.rawValue * 10, note: id.rawValue, ord: 0)]
             }
             $0.notetypesClient.get = { _ in notetype }
             $0.cardRenderingService.renderCard = { id in
@@ -209,6 +210,18 @@ struct CardPreviewModelTests {
         let model = CardPreviewModel(noteIDs: [NoteID(1), NoteID(2), NoteID(3)], startingAt: NoteID(3))
         #expect(model.index == 2)
         #expect(model.currentNoteID == NoteID(3))
+    }
+
+    @Test("the notes either side load ahead, and no further")
+    func neighboursLoadAhead() async {
+        let log = RenderLog()
+        await withCollection(notes: [1, 2, 3, 4], log: log) {
+            let model = CardPreviewModel(noteIDs: [1, 2, 3, 4].map { NoteID($0) }, startingAt: NoteID(3))
+            await model.loadCurrentAndNeighbours()
+
+            #expect(log.all == [CardID(30), CardID(40), CardID(20)])
+            #expect(model.pages[NoteID(1)] == nil)
+        }
     }
 
     @Test("paging moves within the results and turns the card to its front")

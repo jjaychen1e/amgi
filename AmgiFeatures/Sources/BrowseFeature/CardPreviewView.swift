@@ -10,11 +10,14 @@ import AppCore
 import AnkiKit
 import CardSurface
 import Sharing
-import Theme
 
-/// Pushed when a Browse row is tapped: one page per note in the results,
-/// swiped through like a deck, each showing a card the way the reviewer
-/// draws it. Edit is one tap further, in the toolbar.
+/// Pushed when a Browse row is tapped: the results one note at a time, each
+/// showing a card the way the reviewer draws it. Edit is one tap further, in
+/// the toolbar.
+///
+/// Previous and Next step without a transition. One page stays on screen and
+/// its web view swaps the card in place, as the reviewer does between cards;
+/// a sliding pager gave every note a fresh web view that drew blank first.
 struct CardPreviewView: View {
     @State private var model: CardPreviewModel
     @State private var editingNote: NoteRecord?
@@ -26,17 +29,15 @@ struct CardPreviewView: View {
     }
 
     var body: some View {
-        @Bindable var model = model
-        TabView(selection: $model.index) {
-            ForEach(model.noteIDs.indices, id: \.self) { index in
-                CardPreviewPage(model: model, noteID: model.noteIDs[index])
-                    .tag(index)
+        Group {
+            if let noteID = model.currentNoteID {
+                CardPreviewPage(model: model, noteID: noteID)
             }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .task(id: model.index) { await model.loadCurrentAndNeighbours() }
         .navigationTitle("\(model.index + 1) of \(model.noteIDs.count)")
         .navigationBarTitleDisplayMode(.inline)
-        // The pager's own bottom bar would sit under the tab bar.
+        // The previewer's own bottom bar would sit under the tab bar.
         .toolbarVisibility(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
         .navigationDestination(item: $editingNote) { note in
@@ -56,7 +57,7 @@ struct CardPreviewView: View {
         }
         ToolbarItem(placement: .bottomBar) {
             Button {
-                withAnimation(AmgiMotion.standard) { model.goBack() }
+                model.goBack()
             } label: {
                 Label("Previous Note", systemImage: "chevron.left")
             }
@@ -64,19 +65,18 @@ struct CardPreviewView: View {
             .keyboardShortcut(.leftArrow, modifiers: [])
         }
         ToolbarItem(placement: .bottomBar) { Spacer() }
-        ToolbarItem(placement: .bottomBar) {
-            Picker("Side", selection: $model.side) {
-                ForEach(CardPreviewModel.Side.allCases, id: \.self) { side in
-                    Text(side.label).tag(side)
-                }
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
+        // The segmented control draws its own capsule; the bar's glass
+        // behind it read as a second control stacked under the first.
+        if #available(iOS 26, macOS 26, *) {
+            ToolbarItem(placement: .bottomBar) { sidePicker }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .bottomBar) { sidePicker }
         }
         ToolbarItem(placement: .bottomBar) { Spacer() }
         ToolbarItem(placement: .bottomBar) {
             Button {
-                withAnimation(AmgiMotion.standard) { model.goForward() }
+                model.goForward()
             } label: {
                 Label("Next Note", systemImage: "chevron.right")
             }
@@ -84,12 +84,25 @@ struct CardPreviewView: View {
             .keyboardShortcut(.rightArrow, modifiers: [])
         }
     }
+
+    private var sidePicker: some View {
+        Picker("Side", selection: $model.side) {
+            ForEach(CardPreviewModel.Side.allCases, id: \.self) { side in
+                Text(side.label).tag(side)
+            }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+    }
 }
 
 // MARK: - CardPreviewPage
 
-/// One note in the pager: a picker over its cards when it has more than
-/// one, above the selected card on the chosen side.
+/// The note on screen: a picker over its cards when it has more than one,
+/// above the selected card on the chosen side.
+///
+/// The view keeps its identity from note to note, so the `CardWebView`
+/// below is the same web view throughout and only its card changes.
 private struct CardPreviewPage: View {
     let model: CardPreviewModel
     let noteID: NoteID
@@ -103,7 +116,6 @@ private struct CardPreviewPage: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .task(id: noteID) { await model.load(noteID) }
     }
 
     @ViewBuilder
