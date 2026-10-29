@@ -66,11 +66,6 @@ package struct BrowseView: View {
                 case .duplicates: DuplicatesView()
                 }
             }
-            .navigationDestination(for: CardPreviewRoute.self) { route in
-                CardPreviewView(noteIDs: model.sortedNotes.map(\.id), startingAt: route.noteID) {
-                    Task { await model.performSearch() }
-                }
-            }
     }
 
     private var dialogContent: some View {
@@ -363,7 +358,16 @@ struct BrowseContent: View {
                 .onAppear { onRowAppear(note) }
             } else {
                 HStack {
-                    NavigationLink(value: CardPreviewRoute(noteID: note.id)) {
+                    // A view-based link, not `NavigationLink(value:)`. Browse
+                    // is itself pushed with `navigationDestination(isPresented:)`,
+                    // and a value pushed from inside it lands *beneath* Browse:
+                    // the list stayed on screen, the preview turned up on the
+                    // way back, and its pages lost their destination.
+                    NavigationLink {
+                        CardPreviewView(noteIDs: model.sortedNotes.map(\.id), startingAt: note.id) {
+                            Task { await model.performSearch() }
+                        }
+                    } label: {
                         NoteRowView(note: note, notetypeName: model.notetypeNames[note.mid])
                             .onAppear { onRowAppear(note) }
                     }

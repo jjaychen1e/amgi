@@ -21,13 +21,6 @@ enum BrowseTool: Hashable {
     case duplicates
 }
 
-/// Pushes the card previewer, opened on this note. Value-based so a row
-/// doesn't build the previewer, and copy the result list into it, on every
-/// render.
-struct CardPreviewRoute: Hashable {
-    let noteID: NoteID
-}
-
 @CasePathable
 enum BrowseDestination {
     case addNote
