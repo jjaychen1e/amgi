@@ -72,7 +72,7 @@ public struct DeckListRowView: View {
             Button("Delete", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will permanently delete the deck and all its cards.")
+            Text(data.deleteWarning)
         }
     }
 
