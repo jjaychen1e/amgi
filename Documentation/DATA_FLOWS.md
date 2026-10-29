@@ -46,6 +46,15 @@ The `QueuedCard` protobuf carries `SchedulingStates` with `current`, `again`,
 Deck filtering uses Anki search syntax: `deck:"English::Grammar"` automatically
 includes subdecks.
 
+Tapping a note opens the card previewer, paged over the listed results:
+
+```
+1. GetNote(noteId), CardIDsOfNote(noteId) → the note's cards, by ord
+2. GetNotetype(mid) — template names for the card picker, cached per notetype
+3. RenderExistingCard(cardId) per card shown, cached, off the main actor
+4. Strip [[type:…]] placeholders and hand the sides to CardWebView
+```
+
 ## Statistics
 
 ```

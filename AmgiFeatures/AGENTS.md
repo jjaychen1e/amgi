@@ -69,8 +69,8 @@ watch), plus the sinks those extensions link. Every other `*Feature` is
 - `ReaderFeature` — both readers live here (EPUB via `reader_typo_*`, Anki-note
   via `reader_pref_*`, branched at `ReaderBookDetailView.swift`), plus the Study
   landing screen and the lookup UI. The only target in the Cxx chain.
-- `BrowseFeature` — browse, note authoring, batch tagging, tag management, the
-  image-occlusion editor. No app-folder dependencies, which is why four features
+- `BrowseFeature` — browse, the rendered-card previewer, note authoring, batch
+  tagging, tag management, the image-occlusion editor. No app-folder dependencies, which is why four features
   can reach into it.
 - `SettingsFeature` — the app's fan-in point; depending on six sibling products
   is inherent to a settings screen.

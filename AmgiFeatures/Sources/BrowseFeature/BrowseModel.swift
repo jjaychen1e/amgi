@@ -209,18 +209,6 @@ final class BrowseModel {
         return cardId
     }
 
-    /// Resolve a possibly-stub note to its full record before navigation.
-    /// This runs from a synchronous SwiftUI `navigationDestination` closure
-    /// that can't await, so it falls back to the model's already-loaded
-    /// arrays (kept current by `fetchNoteDetails`) rather than an async
-    /// backend fetch.
-    func resolved(_ note: NoteRecord) -> NoteRecord {
-        guard note.sfld == "Loading..." else { return note }
-        return notes.first(where: { $0.id == note.id })
-            ?? allNotes.first(where: { $0.id == note.id })
-            ?? note
-    }
-
     // MARK: - Mutations
 
     func delete(_ id: NoteID) async {

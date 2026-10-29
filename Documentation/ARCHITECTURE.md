@@ -73,7 +73,7 @@ with no prefix (`AppCore`, `AppShared`, `ReviewCore`, `StatsCharts`).
 | **StatsCharts** | Pure chart and heatmap views over `GraphsSnapshot`. Compiled for watchOS in its entirety. |
 | **ReviewCore** | The review state machine (`ReviewSession`) and template render overrides. Shared with the watch, so it stays watchOS-clean. |
 | **CardSurface** | The WebKit card host (`CardWebView`) and its `amgi-asset` scheme handler. Shared by the review screen and Browse's card previewer. iOS-only. |
-| **BrowseFeature** | Note browsing, search, authoring, batch tagging, tag management, and the image-occlusion editor. |
+| **BrowseFeature** | Note browsing, the rendered-card previewer, search, authoring, batch tagging, tag management, and the image-occlusion editor. |
 | **TemplatesFeature** | Card-template editor, template source editing, preview, and notetype field management. |
 | **ReviewFeature** | The review screen: native renderer, flip chrome, rating bar, render-mode UI. |
 | **DecksFeature** | Deck list, deck detail, deck config with the FSRS simulator, profile picker. |

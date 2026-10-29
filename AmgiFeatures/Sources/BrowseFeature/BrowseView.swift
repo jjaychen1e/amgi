@@ -66,6 +66,11 @@ package struct BrowseView: View {
                 case .duplicates: DuplicatesView()
                 }
             }
+            .navigationDestination(for: CardPreviewRoute.self) { route in
+                CardPreviewView(noteIDs: model.sortedNotes.map(\.id), startingAt: route.noteID) {
+                    Task { await model.performSearch() }
+                }
+            }
     }
 
     private var dialogContent: some View {
@@ -358,11 +363,7 @@ struct BrowseContent: View {
                 .onAppear { onRowAppear(note) }
             } else {
                 HStack {
-                    NavigationLink {
-                        NoteEditingDestinationView(note: model.resolved(note)) {
-                            Task { await model.performSearch() }
-                        }
-                    } label: {
+                    NavigationLink(value: CardPreviewRoute(noteID: note.id)) {
                         NoteRowView(note: note, notetypeName: model.notetypeNames[note.mid])
                             .onAppear { onRowAppear(note) }
                     }
@@ -488,16 +489,7 @@ private extension BrowseContent {
         small: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Text(label)
-                .amgiFont(small ? .caption : .body)
-                .padding(.horizontal, small ? 10 : 12)
-                .padding(.vertical, small ? 4 : 6)
-                .background(isSelected ? palette.accent : palette.surface)
-                .foregroundStyle(isSelected ? .white : palette.textPrimary)
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.pressScale)
+        BrowseChip(label: label, isSelected: isSelected, small: small, action: action)
     }
 
     func shortName(_ fullName: String) -> String {

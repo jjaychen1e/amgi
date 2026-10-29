@@ -21,7 +21,7 @@ What Amgi does today. For how it is put together, see [ARCHITECTURE.md](ARCHITEC
 
 ## Notes
 
-- **Browser** — search the whole collection with Anki search syntax, deck filter chips (a top-level deck includes its subdecks), tag chips, sorting, and lazy-loaded results.
+- **Browser** — search the whole collection with Anki search syntax, deck filter chips (a top-level deck includes its subdecks), tag chips, sorting, and lazy-loaded results. Tapping a note opens a card previewer: each card rendered as the reviewer draws it, front or back, with a picker for notes that make several cards, swiping through the results, and Edit in the toolbar.
 - **Editor** — rich field editing with accurate field names pulled from the Rust notetype RPC; multi-select for batch operations.
 - **Tags** — batch tagging from a selection, plus collection-wide tag management.
 - **Duplicates** — find notes that share a first field, which is the question Anki's `dupe:` operator does not answer.
