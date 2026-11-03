@@ -170,6 +170,11 @@ let package = Package(
             ],
             swiftSettings: sharedSwiftSettings
         ),
+        .testTarget(
+            name: "AnkiSyncTests",
+            dependencies: ["AnkiSync"],
+            swiftSettings: sharedSwiftSettings
+        ),
         .target(
             name: "AmgiCardWeb",
             swiftSettings: sharedSwiftSettings

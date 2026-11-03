@@ -29,6 +29,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Amgi connects to devices on your local network to sync with a self-hosted Anki sync server.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Fonts/SarasaMonoK-Regular.ttf</string>

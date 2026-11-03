@@ -54,6 +54,13 @@
     {
       "target" : {
         "containerPath" : "container:..",
+        "identifier" : "AnkiSyncTests",
+        "name" : "AnkiSyncTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:..",
         "identifier" : "AmgiCardWebTests",
         "name" : "AmgiCardWebTests"
       }
